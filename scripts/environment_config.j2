@@ -1,0 +1,153 @@
+{# environment_config.j2 - Configuration template for different environments #}
+ 
+{% if env == 'DEV' %}
+
+-- Development Environment Configuration
+
+{% set database_name = 'FRED_INDEX_DATA_DEV' %}
+
+{% set warehouse = 'COMPUTE_WH_DEV' %}
+
+{% set schedule_load = '0 0 * * * America/New_York' %}  {# Midnight ET #}
+
+{% set schedule_process = '0 1 * * * America/New_York' %}  {# 1 AM ET #}
+
+{% set s3_bucket = 'damg7250-assignment3-dev' %}
+
+{% set aws_key_id = 'AWS_ACCESS_KEY_ID' %}
+
+{% set aws_secret_key = 'AWS_SECRET_ACCESS_KEY' %}
+ 
+{% elif env == 'PROD' %}
+
+-- Production Environment Configuration
+
+{% set database_name = 'FRED_INDEX_DATA' %}
+
+{% set warehouse = 'COMPUTE_WH' %}
+
+{% set schedule_load = '0 0 * * * America/New_York' %}  {# Midnight ET #}
+
+{% set schedule_process = '0 1 * * * America/New_York' %}  {# 1 AM ET #}
+
+{% set s3_bucket = 'S3_path' %}
+
+{% set aws_key_id = 'AWS_ACCESS_KEY_ID' %}
+
+{% set aws_secret_key = 'AWS_SECRET_ACCESS_KEY' %}
+ 
+{% else %}
+
+{{ raise('Unknown environment: ' + env) }}
+
+{% endif %}
+ 
+-- Create database and schemas
+
+CREATE DATABASE IF NOT EXISTS {{ database_name }};
+
+CREATE SCHEMA IF NOT EXISTS {{ database_name }}.RAW_DOW30;
+
+CREATE SCHEMA IF NOT EXISTS {{ database_name }}.HARMONIZED_DOW30;
+
+CREATE SCHEMA IF NOT EXISTS {{ database_name }}.ANALYTICS_DOW30;
+ 
+-- Create file format
+
+CREATE OR REPLACE FILE FORMAT {{ database_name }}.RAW_DOW30.JSON_FORMAT
+
+    TYPE = 'JSON';
+ 
+-- Create external stage
+
+CREATE OR REPLACE STAGE {{ database_name }}.RAW_DOW30.FRED_DATA_STAGE
+
+    URL = 's3://{{ s3_bucket }}/'
+
+    CREDENTIALS = (AWS_KEY_ID = '{{ aws_key_id }}' AWS_SECRET_KEY = '{{ aws_secret_key }}')
+
+    FILE_FORMAT = {{ database_name }}.RAW_DOW30.JSON_FORMAT;
+ 
+-- Create raw staging table
+
+CREATE OR REPLACE TABLE {{ database_name }}.RAW_DOW30.RAW_DOW30_STAGING (
+
+    date DATE,
+
+    index_name STRING,
+
+    index_value FLOAT
+
+);
+ 
+-- Create stream for tracking changes
+
+CREATE OR REPLACE STREAM {{ database_name }}.RAW_DOW30.DOW30_STREAM ON TABLE {{ database_name }}.RAW_DOW30.RAW_DOW30_STAGING;
+ 
+-- Create harmonized table
+
+CREATE OR REPLACE TABLE {{ database_name }}.HARMONIZED_DOW30.DOW30_HARMONIZED (
+
+    date DATE,
+
+    index_name STRING,
+
+    index_value FLOAT,
+
+    daily_return FLOAT
+
+);
+ 
+-- Create analytics tables
+
+CREATE OR REPLACE TABLE {{ database_name }}.ANALYTICS_DOW30.DAILY_INDEX_METRICS (
+
+    date DATE,
+
+    index_name STRING,
+
+    index_value FLOAT,
+
+    daily_return FLOAT
+
+);
+ 
+CREATE OR REPLACE TABLE {{ database_name }}.ANALYTICS_DOW30.MONTHLY_INDEX_METRICS (
+
+    month DATE,
+
+    index_name STRING,
+
+    monthly_return FLOAT
+
+);
+ 
+-- Create tasks for automation
+
+CREATE OR REPLACE TASK {{ database_name }}.RAW_DOW30.LOAD_DOW30_TASK
+
+    WAREHOUSE = {{ warehouse }}
+
+    SCHEDULE = 'USING CRON {{ schedule_load }}'
+
+AS
+
+    CALL {{ database_name }}.RAW_DOW30.LOAD_RAW_DATA();
+ 
+CREATE OR REPLACE TASK {{ database_name }}.HARMONIZED_DOW30.UPDATE_DOW30_METRICS_TASK
+
+    WAREHOUSE = {{ warehouse }}
+
+    SCHEDULE = 'USING CRON {{ schedule_process }}'
+
+    AFTER {{ database_name }}.RAW_DOW30.LOAD_DOW30_TASK
+
+AS
+
+    CALL {{ database_name }}.HARMONIZED_DOW30.UPDATE_DAILY_INDEX_METRICS();
+
+
+
+
+
+

@@ -1,0 +1,5 @@
+snowflake-snowpark-python>=0.4.0
+pandas
+boto3
+fredapi
+numpy
