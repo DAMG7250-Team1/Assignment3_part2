@@ -5,7 +5,7 @@ from datetime import datetime
 import json
 import os
 # FRED API setup
-fred = Fred(api_key='FRED_API_KEY')
+fred = Fred(api_key= os.getenv('FRED_API_KEY'))
 
 # AWS S3 setup
 s3_client = boto3.client('s3',

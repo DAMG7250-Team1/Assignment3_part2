@@ -2,14 +2,14 @@ definition_version: 1
 snowpark:
   project_name: "fred_project"
   stage_name: "FRED_INDEX_DATA.HARMONIZED_DOW30.deployment"
-  src: "calculate_stock_volatility_udf/"
+  src: "normalize_exchange_rate_udf/"
   functions:
-    - name: "calculate_stock_volatility_udf"
+    - name: "normalize_exchange_rate_udf"
       database: "FRED_INDEX_DATA"
       schema: "HARMONIZED_DOW30"
-      handler: "function.main"
+      handler: "function.normalize_exchange_rate"
       runtime: "3.10"
       signature:
-        - name: "prices"
-          type: "array"
+        - name: "rate"
+          type: "float"
       returns: float
