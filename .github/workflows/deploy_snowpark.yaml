@@ -22,11 +22,14 @@ jobs:
 
       - name: Install SnowSQL
         run: |
-          SNOWSQL_VERSION="1.3.3"  # Updated to the latest stable version
-          SNOWSQL_URL="https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/${SNOWSQL_VERSION}/linux_x86_64/snowsql-${SNOWSQL_VERSION}-linux_x86_64.bash"
+          SNOWSQL_VERSION="latest"
+          SNOWSQL_URL="https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/linux_x86_64/snowsql-latest-linux_x86_64.bash"
           
           # Download the installer
-          curl -fsSL "$SNOWSQL_URL" -o snowsql-installer.bash
+          curl -fsSL "$SNOWSQL_URL" -o snowsql-installer.bash || {
+            echo "Error: Failed to download SnowSQL installer. Exiting."
+            exit 1
+          }
           
           # Check if the file is valid (not an HTML/XML error page)
           if head -n 1 snowsql-installer.bash | grep -q "<?xml"; then
