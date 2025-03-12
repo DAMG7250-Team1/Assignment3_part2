@@ -28,28 +28,38 @@ jobs:
 
       - name: Configure default connection
         run: |
-          echo "[default_connection_name]" > .snowflake/config.toml
-          echo "default_connection_name = \"my_default_connection\"" >> .snowflake/config.toml
-          echo "" >> .snowflake/config.toml
-          echo "[connections]" >> .snowflake/config.toml
-          echo "[connections.my_default_connection]" >> .snowflake/config.toml
-          echo "account = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT}\"" >> .snowflake/config.toml
-          echo "user = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_USER}\"" >> .snowflake/config.toml
-          echo "password = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_PASSWORD}\"" >> .snowflake/config.toml
-          echo "warehouse = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_WAREHOUSE}\"" >> .snowflake/config.toml
-          echo "database = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_DATABASE}\"" >> .snowflake/config.toml
-          echo "role = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_ROLE}\"" >> .snowflake/config.toml
+          mkdir -p .snowflake
+          cat <<EOF > .snowflake/config.toml
+          [default_connection_name]
+          default_connection_name = "my_default_connection"
+
+          [connections]
+          [connections.my_default_connection]
+          account = "${SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT}"
+          user = "${SNOWFLAKE_CONNECTIONS_DEFAULT_USER}"
+          password = "${SNOWFLAKE_CONNECTIONS_DEFAULT_PASSWORD}"
+          warehouse = "${SNOWFLAKE_CONNECTIONS_DEFAULT_WAREHOUSE}"
+          database = "${SNOWFLAKE_CONNECTIONS_DEFAULT_DATABASE}"
+          role = "${SNOWFLAKE_CONNECTIONS_DEFAULT_ROLE}"
+          EOF
 
       - name: Test Snowflake connection
         run: |
-          snow sql -q "SELECT CURRENT_TIMESTAMP;" --log-level=DEBUG
+          snowsql -q "SELECT CURRENT_TIMESTAMP;"
 
       - name: Fetch repository changes
         run: |
-          snow git fetch my_git_repo --log-level=DEBUG
+          snow git fetch my_git_repo
 
       - name: Deploy scripts to Snowflake
         run: |
-          # Use Snowflake CLI to execute SQL scripts or Python code
-          # Example command to create a stored procedure
-          snow sql -q "CREATE OR REPLACE PROCEDURE demo_db.git_demo.filter_table(inputTableName VARCHAR, filter_value VARCHAR, outputTableName VARCHAR) RETURNS STRING LANGUAGE PYTHON RUNTIME_VERSION = '3.9' PACKAGES = ('snowflake-snowpark-python') IMPORTS = ('@admin_db.integrations.snowflake_snowpark_utilities/branches/main/common/filter_table.py') HANDLER = 'filter_table.main';"
+          snowsql -q "CREATE OR REPLACE PROCEDURE demo_db.git_demo.filter_table(
+            inputTableName VARCHAR,
+            filter_value VARCHAR,
+            outputTableName VARCHAR
+          ) RETURNS STRING 
+          LANGUAGE PYTHON 
+          RUNTIME_VERSION = '3.9' 
+          PACKAGES = ('snowflake-snowpark-python') 
+          IMPORTS = ('@admin_db.integrations.snowflake_snowpark_utilities/branches/main/common/filter_table.py') 
+          HANDLER = 'filter_table.main';"
