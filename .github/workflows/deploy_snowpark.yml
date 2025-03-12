@@ -26,8 +26,27 @@ jobs:
           cli-version: "latest"
           default-config-file-path: ".snowflake/config.toml"
 
+      - name: Configure default connection
+        run: |
+          echo "[default_connection_name]" > .snowflake/config.toml
+          echo "default_connection_name = \"my_default_connection\"" >> .snowflake/config.toml
+          echo "" >> .snowflake/config.toml
+          echo "[connections]" >> .snowflake/config.toml
+          echo "[connections.my_default_connection]" >> .snowflake/config.toml
+          echo "account = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT}\"" >> .snowflake/config.toml
+          echo "user = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_USER}\"" >> .snowflake/config.toml
+          echo "password = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_PASSWORD}\"" >> .snowflake/config.toml
+          echo "warehouse = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_WAREHOUSE}\"" >> .snowflake/config.toml
+          echo "database = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_DATABASE}\"" >> .snowflake/config.toml
+          echo "role = \"${SNOWFLAKE_CONNECTIONS_DEFAULT_ROLE}\"" >> .snowflake/config.toml
+
+      - name: Test Snowflake connection
+        run: |
+          snow sql -q "SELECT CURRENT_TIMESTAMP;" --log-level=DEBUG
+
       - name: Fetch repository changes
-        run: snow git fetch my_git_repo
+        run: |
+          snow git fetch my_git_repo --log-level=DEBUG
 
       - name: Deploy scripts to Snowflake
         run: |
