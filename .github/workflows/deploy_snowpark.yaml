@@ -1,5 +1,6 @@
-name: Deploy Snowpark Python Code
+name: Deploy Demo Objects
 
+# Controls when the action will run. 
 on:
   push:
     branches:
@@ -17,74 +18,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup Python environment (optional)
       - name: Setup Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      # Install Python packages (if needed)
       - name: Install Python packages
         run: pip install -r requirements.txt
 
-      # Install SnowSQL
-      - name: Install SnowSQL
-        run: |
-          SNOWSQL_VERSION="1.3.2"
-          SNOWSQL_URL="https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.3/linux_x86_64/snowsql-1.3.2-linux_x86_64.bash"
-          
-          # Download the installer
-          curl -fsSL "$SNOWSQL_URL" -o snowsql-installer.bash || {
-            echo "Error: Failed to download SnowSQL installer. Exiting."
-            exit 1
-          }
-          
-          # Check if the file is valid (not an HTML/XML error page)
-          if head -n 1 snowsql-installer.bash | grep -q "<?xml"; then
-            echo "Error: Downloaded file is not a valid SnowSQL script. Exiting."
-            exit 1
-          fi
-          
-          # Install SnowSQL
-          chmod +x snowsql-installer.bash
-          ./snowsql-installer.bash -y
-          
-          # Ensure SnowSQL is added to PATH
-          echo "$HOME/.snowsql/bin" >> $GITHUB_PATH
-          
-          # Verify installation
-          snowsql --version
-
-      # Verify SnowSQL Installation
-      - name: Verify SnowSQL Installation
-        run: snowsql --version
-
-      # Install Snowflake CLI (optional)
-      - name: Install Snowflake CLI
-        uses: Snowflake-Labs/snowflake-cli-action@v1.5
-        with:
-          cli-version: "latest"
-          default-config-file-path: ".snowflake/config.toml"
-
-      # Configure default connection (if using Snowflake CLI)
-      - name: Configure default connection
-        run: |
-          mkdir -p .snowflake
-          cat <<EOF > .snowflake/config.toml
-          [default_connection_name]
-          default_connection_name = "my_default_connection"
-
-          [connections]
-          [connections.my_default_connection]
-          account = "${SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT}"
-          user = "${SNOWFLAKE_CONNECTIONS_DEFAULT_USER}"
-          password = "${SNOWFLAKE_CONNECTIONS_DEFAULT_PASSWORD}"
-          warehouse = "${SNOWFLAKE_CONNECTIONS_DEFAULT_WAREHOUSE}"
-          database = "${SNOWFLAKE_CONNECTIONS_DEFAULT_DATABASE}"
-          role = "${SNOWFLAKE_CONNECTIONS_DEFAULT_ROLE}"
-          EOF
-
-      # Deploy notebooks
+      # Make sure all 7 SNOWFLAKE_ environment variables are set
+      # SnowCLI accesses the passowrd directly from the SNOWFLAKE_PASSWORD environmnet variable
       - name: Deploy notebooks
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
@@ -95,32 +38,8 @@ jobs:
           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
         run: |
-          # Test Snowflake connection
-          snowsql -q "SELECT CURRENT_TIMESTAMP;" \
-            --temporary-connection \
-            --account="$SNOWFLAKE_ACCOUNT" \
-            --user="$SNOWFLAKE_USER" \
-            --role="$SNOWFLAKE_ROLE" \
-            --warehouse="$SNOWFLAKE_WAREHOUSE" \
-            --database="$SNOWFLAKE_DATABASE" \
-            --schema="$SNOWFLAKE_SCHEMA"
+          snow sql -q "ALTER GIT REPOSITORY DEMO_GIT_REPO FETCH" --temporary-connection --account $SNOWFLAKE_ACCOUNT --user $SNOWFLAKE_USER --role $SNOWFLAKE_ROLE --warehouse $SNOWFLAKE_WAREHOUSE --database $SNOWFLAKE_DATABASE --schema $SNOWFLAKE_SCHEMA
+          snow sql -q "EXECUTE IMMEDIATE FROM @DEMO_GIT_REPO/branches/main/scripts/deploy_notebooks.sql USING (env => 'PROD', branch => 'main')" --temporary-connection --account $SNOWFLAKE_ACCOUNT --user $SNOWFLAKE_USER --role $SNOWFLAKE_ROLE --warehouse $SNOWFLAKE_WAREHOUSE --database $SNOWFLAKE_DATABASE --schema $SNOWFLAKE_SCHEMA
 
-          # Fetch changes from Git repository
-          snowsql -q "ALTER GIT REPOSITORY DEMO_GIT_REPO FETCH" \
-            --temporary-connection \
-            --account="$SNOWFLAKE_ACCOUNT" \
-            --user="$SNOWFLAKE_USER" \
-            --role="$SNOWFLAKE_ROLE" \
-            --warehouse="$SNOWFLAKE_WAREHOUSE" \
-            --database="$SNOWFLAKE_DATABASE" \
-            --schema="$SNOWFLAKE_SCHEMA"
-
-          # Deploy scripts
-          snowsql -q "EXECUTE IMMEDIATE FROM @DEMO_GIT_REPO/branches/main/scripts/deploy_notebooks.sql USING (env => 'PROD', branch => 'main')" \
-            --temporary-connection \
-            --account="$SNOWFLAKE_ACCOUNT" \
-            --user="$SNOWFLAKE_USER" \
-            --role="$SNOWFLAKE_ROLE" \
-            --warehouse="$SNOWFLAKE_WAREHOUSE" \
-            --database="$SNOWFLAKE_DATABASE" \
-            --schema="$SNOWFLAKE_SCHEMA"
+          : # Ideally both Snow CLI and the Python Connector could be configured entirely from env variables
+          : #python $GITHUB_WORKSPACE/scripts/deploy_snowpark.py FRED_INDEX_DATA HARMONIZED_DOW30
