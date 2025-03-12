@@ -22,9 +22,17 @@ jobs:
 
       - name: Install SnowSQL
         run: |
-          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/latest/linux_x86_64/snowsql-latest-linux_x86_64.bash
-          chmod +x snowsql-latest-linux_x86_64.bash
-          ./snowsql-latest-linux_x86_64.bash -y
+          SNOWSQL_URL="https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/latest/linux_x86_64/snowsql-latest"
+          curl -fsSL "$SNOWSQL_URL" -o snowsql-latest.bash
+          
+          if head -n 1 snowsql-latest.bash | grep -q "<?xml"; then
+            echo "Error: Downloaded file is not a valid SnowSQL script. Exiting."
+            exit 1
+          fi
+          
+          chmod +x snowsql-latest.bash
+          ./snowsql-latest.bash -y
+          
           echo "$HOME/.snowsql/bin" >> $GITHUB_PATH
 
       - name: Verify SnowSQL Installation
