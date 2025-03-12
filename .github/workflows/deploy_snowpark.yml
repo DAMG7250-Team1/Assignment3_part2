@@ -20,6 +20,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install SnowSQL
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/latest/linux_x86_64/snowsql-latest-linux_x86_64.bash
+          chmod +x snowsql-latest-linux_x86_64.bash
+          ./snowsql-latest-linux_x86_64.bash -y
+          echo "$HOME/.snowsql/bin" >> $GITHUB_PATH
+
+      - name: Verify SnowSQL Installation
+        run: snowsql --version
+
       - name: Install Snowflake CLI
         uses: Snowflake-Labs/snowflake-cli-action@v1.5
         with:
@@ -44,12 +54,10 @@ jobs:
           EOF
 
       - name: Test Snowflake connection
-        run: |
-          snowsql -q "SELECT CURRENT_TIMESTAMP;"
+        run: snowsql -q "SELECT CURRENT_TIMESTAMP;"
 
       - name: Fetch repository changes
-        run: |
-          snow git fetch my_git_repo
+        run: snow git fetch my_git_repo
 
       - name: Deploy scripts to Snowflake
         run: |
