@@ -3,3 +3,6 @@ pandas
 boto3
 fredapi
 numpy
+snowflake-cli-labs
+snowflake-snowpark-python
+snowflake
