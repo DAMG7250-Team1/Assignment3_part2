@@ -1,8 +1,10 @@
-[my_default_connection]
-account = ""
-user = ""
-password = ""
-warehouse = ""
-database = ""
-schema = ""
-role = ""
+default_connection_name = "my_default_connection"
+
+[connections]
+[connections.my_default_connection]
+account = "${SNOWFLAKE_CONNECTIONS_DEFAULT_ACCOUNT}"
+user = "${SNOWFLAKE_CONNECTIONS_DEFAULT_USER}"
+password = "${SNOWFLAKE_CONNECTIONS_DEFAULT_PASSWORD}"
+warehouse = "${SNOWFLAKE_CONNECTIONS_DEFAULT_WAREHOUSE}"
+database = "${SNOWFLAKE_CONNECTIONS_DEFAULT_DATABASE}"
+role = "${SNOWFLAKE_CONNECTIONS_DEFAULT_ROLE}"
