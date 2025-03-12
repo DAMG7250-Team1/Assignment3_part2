@@ -22,8 +22,8 @@ jobs:
 
       - name: Install SnowSQL
         run: |
-          SNOWSQL_VERSION="latest"
-          SNOWSQL_URL="https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/linux_x86_64/snowsql-latest-linux_x86_64.bash"
+          SNOWSQL_VERSION="1.2.28"
+          SNOWSQL_URL="https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.28-linux_x86_64.bash"
           
           # Download the installer
           curl -fsSL "$SNOWSQL_URL" -o snowsql-installer.bash || {
@@ -43,9 +43,6 @@ jobs:
           
           # Ensure SnowSQL is added to PATH
           echo "$HOME/.snowsql/bin" >> $GITHUB_PATH
-          
-          # Verify installation
-          snowsql --version
 
       - name: Verify SnowSQL Installation
         run: snowsql --version
