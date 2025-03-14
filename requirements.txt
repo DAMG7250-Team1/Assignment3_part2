@@ -1,8 +1,10 @@
-snowflake-snowpark-python>=0.4.0
-pandas
-boto3
-fredapi
-numpy
+snowflake-snowpark-python>=1.5.1
+snowflake-connector-python>=3.0.0
+
 snowflake-cli-labs
-snowflake-snowpark-python
-snowflake
+pandas
+fredapi
+boto3
+numpy
+pytest
+python-dotenv

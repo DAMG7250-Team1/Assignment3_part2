@@ -14,7 +14,7 @@ BEGIN
             $1::FLOAT as index_value,
             $4::FLOAT as daily_return,
             $5::FLOAT as monthly_return
-        FROM @FRED_INDEX_DATA.RAW_DOW30.FRED_DATA_STAGE/
+        FROM @FRED_INDEX_DATA.RAW_DOW30.FRED_DATA_STAGE
     )
     FILE_FORMAT = (FORMAT_NAME = 'FRED_INDEX_DATA.RAW_DOW30.CSV_FORMAT')
     PATTERN = '.*fred_daily_index_data.*[.]csv'
@@ -23,7 +23,4 @@ BEGIN
     RETURN 'Data loaded successfully';
 END;
 $$;
-
--- Execute the procedure to load data
-CALL FRED_INDEX_DATA.RAW_DOW30.LOAD_RAW_DATA();
 

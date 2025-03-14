@@ -1,8 +1,5 @@
-import os
 -- Snowflake SQL Setup
-AWS_ACCESSKEY = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_KEY= os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_S3 = os.getenv('S3_path')
+
 -- Create database and schemas
 CREATE DATABASE IF NOT EXISTS FRED_INDEX_DATA;
 CREATE SCHEMA IF NOT EXISTS FRED_INDEX_DATA.RAW_DOW30;
@@ -16,10 +13,10 @@ CREATE OR REPLACE FILE FORMAT FRED_INDEX_DATA.RAW_DOW30.CSV_FORMAT
     SKIP_HEADER = 1
     NULL_IF = ('');
 
--- Create external stage
+-- Create external stage with placeholders for credentials
 CREATE OR REPLACE STAGE FRED_INDEX_DATA.RAW_DOW30.FRED_DATA_STAGE
-    URL = 's3://damg7250-assignment3/'
-    CREDENTIALS = (AWS_KEY_ID = AWS_ACCESSKEY  AWS_SECRET_KEY = AWS_SECRET_KEY)
+    URL = '${S3_PATH}'
+    CREDENTIALS = (AWS_KEY_ID = '${AWS_ACCESS_KEY_ID}' AWS_SECRET_KEY = '${AWS_SECRET_ACCESS_KEY}')
     FILE_FORMAT = FRED_INDEX_DATA.RAW_DOW30.CSV_FORMAT;
 
 -- Create raw staging table
