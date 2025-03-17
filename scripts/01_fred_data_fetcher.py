@@ -2,18 +2,23 @@ import pandas as pd
 import boto3
 from fredapi import Fred
 from datetime import datetime
-import json
 import os
-# FRED API setup
-fred = Fred(api_key= os.getenv('FRED_API_KEY'))
+from dotenv import load_dotenv
+import logging
 
-# AWS S3 setup
-s3_client = boto3.client('s3',
-    aws_access_key_id= os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key= os.getenv('AWS_SECRET_ACCESS_KEY')
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+load_dotenv()
+
+fred = Fred(api_key=os.getenv('FRED_API_KEY'))
+
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
 )
 
-# FRED series IDs for NASDAQ, S&P 500, and Dow Jones
 series_ids = {
     "NASDAQ": "NASDAQCOM",
     "S&P500": "SP500",
@@ -23,69 +28,74 @@ series_ids = {
 start_date = "2020-01-01"
 end_date = datetime.now().strftime("%Y-%m-%d")
 
-# Fetch and process data
+def verify_s3_upload(bucket_name, file_name):
+    try:
+        s3_client.head_object(Bucket=bucket_name, Key=file_name)
+        logger.info(f"Successfully verified S3 upload: {bucket_name}/{file_name}")
+        return True
+    except s3_client.exceptions.ClientError:
+        logger.error(f"Failed to verify S3 upload: {bucket_name}/{file_name}")
+        return False
+
 def get_index_data():
-    all_data = []
-    for index, series_id in series_ids.items():
-        data = fred.get_series(series_id, start_date, end_date)
-        df = pd.DataFrame(data, columns=['value'])
-        df['date'] = df.index
-        df['index'] = index
-        df['daily_return'] = df['value'].pct_change()
-        df['monthly_return'] = df['value'].pct_change(periods=30)
-        all_data.append(df.reset_index(drop=True))
-    return pd.concat(all_data, ignore_index=True)
+    try:
+        all_data = []
+        for index, series_id in series_ids.items():
+            logger.info(f"Fetching data for {index} ({series_id})")
+            data = fred.get_series(series_id, start_date, end_date)
+            df = pd.DataFrame(data, columns=['value'])
+            df['date'] = df.index.strftime('%Y-%m-%d')
+            df['index'] = index
+            df['daily_return'] = df['value'].pct_change()
+            df['monthly_return'] = df['value'].pct_change(periods=30)
+            all_data.append(df.reset_index(drop=True))
+        combined_df = pd.concat(all_data, ignore_index=True)
+        logger.info(f"Successfully fetched {len(combined_df)} rows of data")
+        return combined_df
+    except Exception as e:
+        logger.error(f"Error fetching FRED data: {str(e)}")
+        raise
 
-# Convert DataFrame to CSV
 def df_to_csv(df):
-    return df.to_csv(index=False)
+    try:
+        df = df[['value', 'date', 'index', 'daily_return', 'monthly_return']]
+        csv_data = df.to_csv(index=False)
+        logger.info("Successfully converted DataFrame to CSV")
+        return csv_data
+    except Exception as e:
+        logger.error(f"Error converting DataFrame to CSV: {str(e)}")
+        raise
 
-# Upload data to S3
 def upload_to_s3(data, bucket_name, file_name):
-    s3_client.put_object(
-        Bucket=bucket_name,
-        Key=file_name,
-        Body=data
-    )
+    try:
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key=file_name,
+            Body=data
+        )
+        if verify_s3_upload(bucket_name, file_name):
+            logger.info(f"Successfully uploaded data to S3: {bucket_name}/{file_name}")
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"Error uploading to S3: {str(e)}")
+        raise
 
-# Main execution
+def main():
+    try:
+        logger.info("Starting FRED data fetch process")
+        index_data = get_index_data()
+        csv_data = df_to_csv(index_data)
+        bucket_name = 'damg7250-assignment3-part2'
+        file_name = f'fred_daily_index_data_{datetime.now().strftime("%Y%m%d")}.csv'
+        if upload_to_s3(csv_data, bucket_name, file_name):
+            logger.info("Data pipeline completed successfully")
+        else:
+            logger.error("Data pipeline failed during S3 upload")
+    except Exception as e:
+        logger.error(f"Pipeline failed: {str(e)}")
+        raise
+
 if __name__ == "__main__":
-    # Fetch and process data
-    index_data = get_index_data()
-    
-    # Convert DataFrame to CSV
-    csv_data = df_to_csv(index_data)
-    
-    # Upload to S3
-    bucket_name = 'damg7250-assignment3-part2'
-    file_name = f'fred_daily_index_data_{datetime.now().strftime("%Y%m%d")}.csv'
-    upload_to_s3(csv_data, bucket_name, file_name)
-    print(f"Data uploaded to S3: {bucket_name}/{file_name}")
- 
-# Snowflake setup (run these SQL commands in Snowflake)
-"""
--- Create file format
-CREATE OR REPLACE FILE FORMAT my_json_format
-    TYPE = 'JSON';
- 
--- Create external stage
-CREATE OR REPLACE STAGE fred_data_stage
-    URL = 's3://damg7250-assignment3/'
-    CREDENTIALS = (AWS_KEY_ID = 'YOUR_AWS_ACCESS_KEY' AWS_SECRET_KEY = 'YOUR_AWS_SECRET_KEY')
-    FILE_FORMAT = my_json_format;
- 
--- Create external table
-CREATE OR REPLACE EXTERNAL TABLE fred_daily_index_data (
-    date DATE,
-    index STRING,
-    value FLOAT,
-    daily_return FLOAT,
-    monthly_return FLOAT
-)
-LOCATION = @fred_data_stage
-FILE_FORMAT = my_json_format
-PATTERN = '.*fred_daily_index_data.*[.]json';
- 
--- Query the external table
-SELECT * FROM fred_daily_index_data LIMIT 10;
-"""
+    main()
+

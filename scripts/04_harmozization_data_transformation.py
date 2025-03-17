@@ -1,3 +1,12 @@
+import snowflake.snowpark as snowpark
+from snowflake.snowpark.functions import col, date_trunc
+import os
+from datetime import datetime
+import pandas as pd
+
+
+
+
 def transform_dow30_data(session):
     # Read raw data
     raw_data = session.table("RAW_DOW30.RAW_DOW30_STAGING")
@@ -34,3 +43,20 @@ def transform_dow30_data(session):
     # Save the final result
     volatility_data.write.mode("overwrite").save_as_table("DOW30_HARMONIZED_WITH_VOLATILITY")
     print("DOW30_HARMONIZED_WITH_VOLATILITY table created.")
+
+
+def create_session():
+    """Create Snowflake session using environment variables"""
+    connection_parameters = {
+        "account": os.getenv("SNOWFLAKE_ACCOUNT"),
+        "user": os.getenv("SNOWFLAKE_USER"),
+        "password": os.getenv("SNOWFLAKE_PASSWORD"),
+        "role": os.getenv("SNOWFLAKE_ROLE", "ACCOUNTADMIN"),
+        "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE"),
+        "database": os.getenv("SNOWFLAKE_DATABASE", "FRED_INDEX_DATA"),
+        "schema": os.getenv("SNOWFLAKE_SCHEMA", "HARMONIZED_DOW30")
+    }
+    return snowpark.Session.builder.configs(connection_parameters).create()
+
+session=create_session()
+transform_dow30_data(session)

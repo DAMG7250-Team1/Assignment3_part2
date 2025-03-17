@@ -1,16 +1,14 @@
-
 streamlit
 pandas
 numpy
 altair
-snowflake-snowpark-python>=1.5.1
+snowflake-snowpark-python
 snowflake-connector-python>=3.0.0
-
 snowflake-cli-labs
 fredapi
 boto3
 numpy
 pytest
 python-dotenv
-
+jinja2
 
