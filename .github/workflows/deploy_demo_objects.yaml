@@ -1,12 +1,9 @@
 name: Deploy Demo Objects
 
-# Controls when the action will run. 
 on:
   push:
     branches:
       - main
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
@@ -35,7 +32,20 @@ jobs:
           sed -i "s|\${AWS_ACCESS_KEY_ID}|${{ secrets.AWS_ACCESS_KEY_ID }}|g" scripts/02_snowflake_setup.sql
           sed -i "s|\${AWS_SECRET_ACCESS_KEY}|${{ secrets.AWS_SECRET_ACCESS_KEY }}|g" scripts/02_snowflake_setup.sql
 
-      # Step 5: Deploy Snowflake objects (SQL scripts)
+      # Step 5: Debug Snowflake Environment Variables
+      - name: Debug Snowflake Environment Variables
+        run: |
+          echo "SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}"
+          echo "SNOWFLAKE_USER=${SNOWFLAKE_USER}"
+          echo "SNOWFLAKE_ROLE=${SNOWFLAKE_ROLE}"
+          echo "SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}"
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+
+      # Step 6: Deploy Snowflake objects (SQL scripts)
       - name: Deploy Snowflake objects
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
@@ -47,13 +57,14 @@ jobs:
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
+          export SNOWFLAKE_ACCOUNT SNOWFLAKE_USER SNOWFLAKE_PASSWORD SNOWFLAKE_ROLE SNOWFLAKE_WAREHOUSE
           snow sql -f scripts/02_snowflake_setup.sql --temporary-connection \
-            --account $SNOWFLAKE_ACCOUNT \
-            --user $SNOWFLAKE_USER \
-            --role $SNOWFLAKE_ROLE \
-            --warehouse $SNOWFLAKE_WAREHOUSE
+            --account "$SNOWFLAKE_ACCOUNT" \
+            --user "$SNOWFLAKE_USER" \
+            --role "$SNOWFLAKE_ROLE" \
+            --warehouse "$SNOWFLAKE_WAREHOUSE"
 
-      # Step 6: Deploy Snowpark Python scripts (UDFs and procedures)
+      # Step 7: Deploy Snowpark Python scripts (UDFs and procedures)
       - name: Deploy Snowpark Python scripts
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
@@ -66,11 +77,20 @@ jobs:
         run: |
           python scripts/deploy_snowpark.py
 
-      # Step 7 (Optional): Run unit tests
+      # Step 8: Run Unit Tests
       - name: Run unit tests
         if: always()  # Run even if previous steps fail
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
         run: |
           if [ -d "test" ]; then
+            echo "Running unit tests..."
             pip install pytest
             pytest test/
           else
