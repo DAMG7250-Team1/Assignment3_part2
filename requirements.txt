@@ -1,8 +1,8 @@
 
-streamlit == 1.43.2
-plotly>=5.0.0
+streamlit
 pandas
 numpy
+altair
 snowflake-snowpark-python>=1.5.1
 snowflake-connector-python>=3.0.0
 
