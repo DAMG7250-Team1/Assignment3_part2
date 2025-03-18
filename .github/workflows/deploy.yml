@@ -38,7 +38,7 @@ jobs:
 
       # Step 4: Generate SQL Configuration using Jinja2
       - name: Generate PROD SQL Configuration
-        run: python config/environment_config.py PROD
+        run: python environment_config.py PROD
 
       # Step 5: Deploy Snowflake Configuration
       - name: Deploy Snowflake Configuration
