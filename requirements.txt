@@ -9,5 +9,5 @@ numpy
 pytest
 python-dotenv
 plotly==5.22.0
-
-
+streamlit==1.10.0
+openpyxl
