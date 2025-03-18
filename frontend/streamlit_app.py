@@ -1,3 +1,9 @@
+import subprocess
+import sys
+
+# Print installed packages to Streamlit logs
+subprocess.run([sys.executable, "-m", "pip", "list"])
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
