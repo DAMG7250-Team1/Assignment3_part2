@@ -1,4 +1,6 @@
-import snowflake.connector
+
+from snowflake.connector import connect
+
 from snowflake.snowpark import Session
 import os
 
