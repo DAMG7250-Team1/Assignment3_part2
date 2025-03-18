@@ -1,19 +1,23 @@
-
-from snowflake.connector import connect
-
 from snowflake.snowpark import Session
 import os
 
 # Connection parameters
-connection = connect(
-    account=os.getenv('SNOWFLAKE_ACCOUNT'),
-    user=os.getenv('SNOWFLAKE_USER'),
-    password=os.getenv('SNOWFLAKE_PASSWORD'),
-    warehouse=os.getenv('SNOWFLAKE_WAREHOUSE'),
-    database=os.getenv('SNOWFLAKE_DATABASE'),
-    schema=os.getenv('SNOWFLAKE_SCHEMA')
-)
-# Create a Snowflake session
+connection_parameters = {
+    "account": os.getenv("SNOWFLAKE_ACCOUNT"),
+    "user": os.getenv("SNOWFLAKE_USER"),
+    "password": os.getenv("SNOWFLAKE_PASSWORD"),
+    "role": os.getenv("SNOWFLAKE_ROLE"),
+    "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE"),
+    "database": os.getenv("SNOWFLAKE_DATABASE"),
+    "schema": os.getenv("SNOWFLAKE_SCHEMA"),
+}
+
+# Ensure no None values before connecting
+missing_keys = [key for key, value in connection_parameters.items() if value is None]
+if missing_keys:
+    raise ValueError(f"Missing environment variables: {', '.join(missing_keys)}")
+
+# Create a Snowflake Snowpark session
 session = Session.builder.configs(connection_parameters).create()
 
 # Test SQL UDF
@@ -27,8 +31,9 @@ def test_calculate_stock_volatility():
     print("Calculate Stock Volatility Result:", result[0][0])
 
 # Run tests
-test_normalize_exchange_rate()
-test_calculate_stock_volatility()
-
-# Close the session
-session.close()
+if __name__ == "__main__":
+    test_normalize_exchange_rate()
+    test_calculate_stock_volatility()
+    
+    # Close the session
+    session.close()
