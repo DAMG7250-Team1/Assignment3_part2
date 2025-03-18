@@ -9,5 +9,5 @@ numpy
 pytest
 python-dotenv
 plotly
-streamlit>=1.10.0
+streamlit
 openpyxl
