@@ -8,4 +8,4 @@ boto3
 numpy
 pytest
 python-dotenv
-snowflake-connector-python
+
