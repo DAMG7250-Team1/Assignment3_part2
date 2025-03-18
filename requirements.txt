@@ -1,13 +1,15 @@
+streamlit
+plotly
+pandas
+numpy
 snowflake-snowpark-python>=1.5.1
 snowflake-connector-python>=3.0.0
 
 snowflake-cli-labs
-pandas
 fredapi
 boto3
 numpy
 pytest
 python-dotenv
-plotly==5.18.0
-streamlit
-openpyxl
+
+
