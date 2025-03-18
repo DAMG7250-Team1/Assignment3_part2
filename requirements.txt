@@ -8,6 +8,6 @@ boto3
 numpy
 pytest
 python-dotenv
-plotly==5.18.0
-streamlit==1.10.0
+plotly
+streamlit>=1.10.0
 openpyxl
