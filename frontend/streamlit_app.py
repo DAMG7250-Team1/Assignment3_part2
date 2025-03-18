@@ -7,11 +7,19 @@ subprocess.run([sys.executable, "-m", "pip", "list"])
 import streamlit as st
 import pandas as pd
 import altair as alt
-
+import snowflake.connector
 st.set_page_config(page_title="Snowflake Data Viewer", layout="wide")
-
+conn = snowflake.connector.connect(
+    user=st.secrets["snowflake"]["user"],
+    password=st.secrets["snowflake"]["password"],
+    account=st.secrets["snowflake"]["account"],
+    warehouse=st.secrets["snowflake"]["warehouse"],
+    database=st.secrets["snowflake"]["database"],
+    schema=st.secrets["snowflake"]["schema"],
+)
+st.write("Connected to Snowflake successfully!")
 # Initialize Snowflake connection
-conn = st.connection("snowflake")
+
 session = conn.session()
 
 st.title("\ud83d\udcca Snowflake Data Viewer")
