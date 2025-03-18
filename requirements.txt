@@ -1,6 +1,6 @@
 --no-cache-dir
 streamlit
-plotly
+plotly == 5.18.0
 pandas
 numpy
 snowflake-snowpark-python>=1.5.1
