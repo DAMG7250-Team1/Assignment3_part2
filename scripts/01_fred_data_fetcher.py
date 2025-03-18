@@ -57,7 +57,7 @@ if __name__ == "__main__":
     csv_data = df_to_csv(index_data)
     
     # Upload to S3
-    bucket_name = 'damg7250-assignment3'
+    bucket_name = 'damg7250-assignment3-part2'
     file_name = f'fred_daily_index_data_{datetime.now().strftime("%Y%m%d")}.csv'
     upload_to_s3(csv_data, bucket_name, file_name)
     print(f"Data uploaded to S3: {bucket_name}/{file_name}")
