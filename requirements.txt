@@ -1,6 +1,6 @@
 
-streamlit
-plotly == 5.18.0
+streamlit == 1.43.2
+plotly>=5.0.0
 pandas
 numpy
 snowflake-snowpark-python>=1.5.1
