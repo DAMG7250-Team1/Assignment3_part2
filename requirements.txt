@@ -8,4 +8,6 @@ boto3
 numpy
 pytest
 python-dotenv
+plotly==5.22.0
+
 
