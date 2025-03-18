@@ -27,7 +27,7 @@ def test_normalize_exchange_rate():
 
 # Test Python UDF
 def test_calculate_stock_volatility():
-    result = session.sql("SELECT FRED_INDEX_DATA.HARMONIZED_DOW30.CALCULATE_STOCK_VOLATILITY_UDF(ARRAY_CONSTRUCT(100, 102, 98, 103, 101))").collect()
+    result = session.sql("SELECT FRED_INDEX_DATA.HARMONIZED_DOW30.CALCULATE_VOLATILITY(ARRAY_CONSTRUCT(100, 102, 98, 103, 101))").collect()
     print("Calculate Stock Volatility Result:", result[0][0])
 
 # Run tests
