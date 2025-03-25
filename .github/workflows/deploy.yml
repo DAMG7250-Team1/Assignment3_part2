@@ -1,4 +1,4 @@
-name: FRED Currency Exchange Data Update
+name: FRED Index Data Update
 
 on:
   schedule:
